@@ -1,0 +1,104 @@
+---
+title: "Homework 3"
+author: "Kaleb Luna"
+date: "2024-10-04"
+output: 
+  html_document: 
+    toc: true 
+    toc_float: true 
+    theme:
+      bootswatch: "flatly"
+      base_font: "Arial"
+      heading_font: "Arial"
+      code_font: "Courier New" 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+tvSeries <- read.csv("Homework3_tvSeries.csv")
+ratings <- read.csv("Homework3_ratings.csv")
+principals <- read.csv("Homework3_principals.csv")
+
+```
+
+# Part 1: IMDB Analysis
+
+### 1. Create a dataframe that contains all of the TV series that are no longer running (meaning they have an end year in the dataset). Create a new variable to keep track of how many years each series ran and display the distribution of this variable. How many TV series in this dataset ended the same year as they started?
+
+```{r}
+# Creating a new dataframe of discontinued shows 
+discontinued <- tvSeries |>
+  filter(!is.na(endYear))
+# Creating a new variable showing the duration of discontinued shows (in years)
+discontinued <- discontinued |> 
+  mutate(duration = endYear - startYear + 1)
+# Displaying graphical relationship
+ggplot(discontinued, aes(x = duration)) + 
+  geom_histogram(binwidth = 1, fill = "maroon", color = "black") + 
+  labs(title = "Distribution of the Duration of Discontinued TV Shows", x = "Number of Years", y = "Count")
+# Obtaining how many shows ended the same year it started
+sameyearEnded <- discontinued |> 
+  filter(startYear == endYear) |> 
+  nrow()
+
+```
+
+17,929 TV shows ended the same year they started.
+
+### 2. What proportion of the TV series have rating information? Find the TV series with a rating of 9 or higher with at least 20,000 votes and print the series names, sorted alphabetically.
+
+```{r}
+# Total number of TV series
+totalSeries <- nrow(tvSeries)
+withRatings <- inner_join(tvSeries, ratings, by = "tconst")
+totalWithRatings <- nrow(withRatings)
+propRatingInfo = round((totalSeries / totalWithRatings), 2)
+print(propRatingInfo)
+
+# Number of TV series with rating of 9 or higher with at least 20k votes, then printing sorted names
+ninePlus <- withRatings |> 
+  filter(averageRating >= 9, numVotes >= 20000) |>
+  arrange(primaryTitle)
+ninePlusNames <- ninePlus$primaryTitle
+print(ninePlusNames)
+
+```
+
+### 3. Calculate the ages of the principal cast and crew when each TV series started. Compare the median ages for each category of principals at the start of these TV series. Note: the "self" category denotes people playing themselves, e.g. on reality TV shows.
+
+Writers have the highest median start age at the start of these TV series with a median start age of 47, followed by self of a median start age of 44, then actors with a start age of 41, then lastl actresses with a median start age of 35.
+
+```{r}
+#Creating a new variable containing merge of principals and tvSeries then outputting merged datasets 
+castAndSeries <- inner_join(principals, tvSeries, by = "tconst") |> 
+  mutate(ageStarted = startYear - birthYear)
+
+
+# Obtaining median start aged ages of each category 
+castAndSeries |> 
+  group_by(category) |> 
+  summarize(medianStartAge = median(ageStarted, na.rm = TRUE))
+
+
+```
+
+# Part 2: Project Reflection
+
+### 4. Why did you choose the data set you used for this project? What about the context of the data interested you? Why did you choose the predictors you did, and what did you expect to find in their relationships with the outcome variable?
+
+I chose the Rolling Stone's Top 500 Ranked Albums data set because music, as a whole, has always captured my interest in various aspects. As a hardcore "music listener" myself, as like anyone else, I was curious about what about an album makes it so that they belong on such a high-ranked list of the billions of albums that are available to this day. I was curious about what sort of components or if there was a "formula" to use to be able to have a "GOAT" album. I chose the predictors: release year, weeks on billboard, and genre because I was interested into seeing how each of these variables played a part on how well an album does on Spotify and how these predictors overlap each other in the long run (e.g. how certain genres blow up during certain time periods (release year) and how that impacts popularity). In the project, I expected to find a positive relationship between all of these predictors with Spotify popularity, which I did. However, the relationships weren't as strong as I thought they were towards the end of my findings.
+
+### 5. What challenges did you face while completing the assignment, and how did you overcome those challenges? What do you plan to do differently next time as a result? List at least one specific thing you learned about yourself as a data science student as a result.
+
+While completing the assignment, I mainly struggled on visualizing the relationships and data in a clear, meaningful way without clustering or making it messy. I had to figure out new strategies and functions to utilize in order to display the data between the predictors and the outcome variable more efficiently and effectively in order to have a clearer output for the reader to understand what they are looking at. Specifically, I had the hardest time displaying this in my multivariate analysis between Spotify popularity, genre, and release year due to the amount of data across these categories. Next time, I will make more time for the visualization aspect of my project and try to obtain feedback on the visualizations as well. I've learned that I thrive in exploring different options and projects that foster creativity and versatility in one's work, which is what this assignment did.
+
+### 6. Describe at least one way your personal background influenced how you analyzed this data or presented your analysis. What might someone else have done differently if analyzing the same dataset?
+
+My personal background in having experience in music production and my overall appreciation for it may have influenced how I analyzed and presented my analysis through how I considered how genre impacted Spotify popularity. Going into this analysis, I knew that certain genres tend to rise up in trends during certain time periods due to a number of outside factors. Someone else might have not considered this pattern into account and disregarded the sociocultural narrative behind such trends.
